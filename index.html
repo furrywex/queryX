@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryX — Open Source Studio</title>
+    <style>
+        :root {
+            --bg: #000;
+            --text: #a0a0a0;
+            --heading: #c8c8c8;
+            --border: #333;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        body.lang-ru .en {
+            display: none;
+        }
+        body:not(.lang-ru) .ru {
+            display: none;
+        }
+
+        /* Хакерский фон */
+        #hacker-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            font-size: 12px;
+            line-height: 14px;
+            overflow: hidden;
+            color: #1a1a1a;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        #hacker-bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.9) 100%);
+        }
+
+        /* Летающий логотип */
+        #floating-logo {
+            position: fixed;
+            width: 200px;
+            height: 60px;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.1s ease-out;
+            image-rendering: pixelated;
+        }
+        @media (max-width: 768px) {
+            #floating-logo {
+                display: none;
+            }
+        }
+
+        /* Кнопка меню */
+        #menu-btn {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: all 0.3s;
+        }
+        #menu-btn:hover {
+            border-color: var(--heading);
+        }
+        #menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text);
+            position: relative;
+            transition: all 0.3s;
+        }
+        #menu-btn span::before,
+        #menu-btn span::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background: var(--text);
+            left: 0;
+            transition: all 0.3s;
+        }
+        #menu-btn span::before {
+            top: -6px;
+        }
+        #menu-btn span::after {
+            top: 6px;
+        }
+        #menu-btn.active span {
+            background: transparent;
+        }
+        #menu-btn.active span::before {
+            top: 0;
+            transform: rotate(45deg);
+        }
+        #menu-btn.active span::after {
+            top: 0;
+            transform: rotate(-45deg);
+        }
+
+        /* Меню */
+        #menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        #menu-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        #menu-overlay img {
+            margin: 15px 0;
+            max-width: 90%;
+            height: auto;
+        }
+        #menu-overlay a img {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #menu-overlay a img:hover {
+            transform: scale(1.03);
+        }
+
+        /* Основной контент */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .ascii-box {
+            border: 1px solid var(--border);
+            padding: 20px;
+            margin: 30px 0;
+            position: relative;
+        }
+        .ascii-box::before {
+            content: '╔═╗';
+            position: absolute;
+            top: -12px;
+            left: 10px;
+            background: var(--bg);
+            padding: 0 8px;
+            color: var(--border);
+        }
+        .ascii-box::after {
+            content: '╚═╝';
+            position: absolute;
+            bottom: -12px;
+            right: 10px;
+            background: var(--bg);
+            padding: 0 8px;
+            color: var(--border);
+        }
+        h1 {
+            font-size: 2.2rem;
+            color: var(--heading);
+            text-align: center;
+            margin: 30px 0;
+            letter-spacing: 2px;
+        }
+        h2 {
+            font-size: 1.5rem;
+            color: var(--heading);
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+        h3 {
+            font-size: 1.2rem;
+            color: var(--heading);
+            margin-bottom: 10px;
+        }
+        p {
+            line-height: 1.7;
+            margin-bottom: 15px;
+        }
+        .center-img {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+        .project {
+            margin: 25px 0;
+        }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        /* Кнопка языка */
+        #lang-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 40px;
+            height: 40px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            z-index: 1001;
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        #lang-btn:hover {
+            border-color: var(--heading);
+            color: var(--heading);
+        }
+        @media (max-width: 768px) {
+            #menu-btn {
+                top: 15px;
+                right: 15px;
+            }
+            #lang-btn {
+                bottom: 15px;
+                right: 15px;
+            }
+            .container {
+                padding: 20px 15px;
+            }
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="lang-ru">
+    <!-- Хакерский фон -->
+    <div id="hacker-bg"></div>
+
+    <!-- Летающий логотип -->
+    <img id="floating-logo" src="assets/logo1.png" alt="QueryX Logo">
+
+    <!-- Кнопка меню -->
+    <button id="menu-btn" aria-label="Toggle menu">
+        <span></span>
+    </button>
+
+    <!-- Меню -->
+    <div id="menu-overlay">
+        <img src="assets/menulogo.png" alt="QueryX Menu Logo" style="width:350px;height:120px;">
+        <a href="https://github.com/furrywex" target="_blank" rel="noopener">
+            <img src="assets/button.png" alt="Furrywex on GitHub" style="width:350px;height:185px;">
+        </a>
+    </div>
+
+    <!-- Кнопка языка -->
+    <button id="lang-btn" aria-label="Switch language">
+        <span class="en">RU</span>
+        <span class="ru">EN</span>
+    </button>
+
+    <!-- Основной контент -->
+    <main class="container">
+        <img src="assets/logo1.png" alt="QueryX Logo Small" class="center-img" style="width:200px;height:60px;">
+        <img src="assets/logo_main.png" alt="QueryX Main Logo" class="center-img" style="max-width:910px;">
+
+        <div class="ascii-box">
+            <h2 class="en">Welcome to QueryX</h2>
+            <h2 class="ru">Добро пожаловать в QueryX</h2>
+            <p class="en">
+                QueryX is an open-source development studio creating lightweight,
+                fast, and privacy-focused tools for Android. We believe in minimalism
+                and efficiency — no bloat, no trackers, just clean code.
+            </p>
+            <p class="ru">
+                QueryX — студия open-source разработки, создающая лёгкие,
+                быстрые и приватные инструменты для Android. Мы верим в минимализм
+                и эффективность — никакого мусора, никаких трекеров, только чистый код.
+            </p>
+        </div>
+
+        <div class="ascii-box">
+            <h2 class="en">Our Projects</h2>
+            <h2 class="ru">Наши проекты</h2>
+
+            <div class="project">
+                <h3>qTerminal</h3>
+                <p class="en">
+                    Lightweight Android terminal emulator powered by Busybox.
+                    No root required. Clean, fast, and minimal.
+                </p>
+                <p class="ru">
+                    Лёгкий эмулятор терминала для Android на базе Busybox.
+                    Root не требуется. Чистый, быстрый и минималистичный.
+                </p>
+            </div>
+
+            <div class="project">
+                <h3>Query Wave</h3>
+                <p class="en">
+                    Minimalist mobile browser for Android. Fast, lightweight,
+                    privacy-focused. No ads, no tracking.
+                </p>
+                <p class="ru">
+                    Минималистичный мобильный браузер для Android. Быстрый,
+                    лёгкий, ориентированный на приватность. Без рекламы и отслеживания.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024-2026 QueryX. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // ==================== ХАКЕРСКИЙ ФОН ====================
+        const bg = document.getElementById('hacker-bg');
+        const chars = '#&?::;+=€$₽@%*!?<>{}[]()\\/|~^01XYZ';
+
+        function generateBg() {
+            const cols = Math.ceil(window.innerWidth / 12);
+            const rows = Math.ceil(window.innerHeight / 14);
+            let text = '';
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    text += chars[Math.floor(Math.random() * chars.length)];
+                }
+                text += '\n';
+            }
+            bg.textContent = text;
+        }
+
+        generateBg();
+        setInterval(generateBg, 200);
+        window.addEventListener('resize', generateBg);
+
+        // ==================== ЛЕТАЮЩИЙ ЛОГОТИП ====================
+        const floatingLogo = document.getElementById('floating-logo');
+        let mouseX = -200;
+        let mouseY = -200;
+        let logoX = -200;
+        let logoY = -200;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateLogo() {
+            const dx = mouseX - logoX;
+            const dy = mouseY - logoY;
+            logoX += dx * 0.08;
+            logoY += dy * 0.08;
+
+            // Ограничение границ экрана
+            const maxX = window.innerWidth - 200;
+            const maxY = window.innerHeight - 60;
+            logoX = Math.max(0, Math.min(logoX, maxX));
+            logoY = Math.max(0, Math.min(logoY, maxY));
+
+            floatingLogo.style.left = logoX + 'px';
+            floatingLogo.style.top = logoY + 'px';
+
+            requestAnimationFrame(animateLogo);
+        }
+        animateLogo();
+
+        // ==================== МЕНЮ ====================
+        const menuBtn = document.getElementById('menu-btn');
+        const menuOverlay = document.getElementById('menu-overlay');
+
+        function openMenu() {
+            menuBtn.classList.add('active');
+            menuOverlay.classList.add('active');
+        }
+
+        function closeMenu() {
+            menuBtn.classList.remove('active');
+            menuOverlay.classList.remove('active');
+        }
+
+        menuBtn.addEventListener('click', () => {
+            if (menuOverlay.classList.contains('active')) {
+                closeMenu();
+            } else {
+                openMenu();
+            }
+        });
+
+        menuOverlay.addEventListener('click', (e) => {
+            if (e.target === menuOverlay) {
+                closeMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menuOverlay.classList.contains('active')) {
+                closeMenu();
+            }
+        });
+
+        // ==================== ЯЗЫК ====================
+        const langBtn = document.getElementById('lang-btn');
+        const body = document.body;
+
+        // Загрузка сохранённого языка
+        const savedLang = localStorage.getItem('queryx_lang');
+        if (savedLang === 'en') {
+            body.classList.remove('lang-ru');
+        } else {
+            body.classList.add('lang-ru');
+        }
+
+        langBtn.addEventListener('click', () => {
+            if (body.classList.contains('lang-ru')) {
+                body.classList.remove('lang-ru');
+                localStorage.setItem('queryx_lang', 'en');
+            } else {
+                body.classList.add('lang-ru');
+                localStorage.setItem('queryx_lang', 'ru');
+            }
+        });
+
+        // Инициализация языка по умолчанию (русский)
+        if (savedLang === null) {
+            localStorage.setItem('queryx_lang', 'ru');
+        }
+    </script>
+</body>
+</html>
